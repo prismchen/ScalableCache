@@ -6,7 +6,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Created by xiaochen on 12/31/16.
  */
-public class Cache<K, V> {
+public class HashTable<K, V> {
 
     class Node<K, V> {
         K key;
@@ -27,11 +27,11 @@ public class Cache<K, V> {
     private Node[] store;
     private ReadWriteLock[] locks;
 
-    public Cache() {
+    public HashTable() {
         this(DEFAULT_CAPACITY);
     }
 
-    public Cache(int initSize) {
+    public HashTable(int initSize) {
         capacity = initSize;
         store = new Node[capacity];
         locks = new ReadWriteLock[capacity];
@@ -64,9 +64,7 @@ public class Cache<K, V> {
     }
 
     private boolean set(K key, V val, boolean isResizing) {
-
         boolean success = true; int h;
-
         synchronized (this) {
             if (!isResizing) checkAndResize();
             h = hash(key);

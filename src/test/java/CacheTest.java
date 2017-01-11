@@ -1,6 +1,6 @@
 package test.java;
 
-import main.java.Cache;
+import main.java.HashTable;
 import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 public class CacheTest {
     @Test
     public void cacheTest1() {
-        Cache<Integer, String> c1 = new Cache<>();
+        HashTable<Integer, String> c1 = new HashTable<>();
         c1.set(0, "Hello");
         c1.set(1, "World");
         assertTrue(c1.get(0).equals("Hello"));
@@ -23,8 +23,8 @@ public class CacheTest {
     @Test
     public void cacheTest2() {
         int testNum = 2000000;
-        Cache<Integer, Integer> c2 = new Cache<>();
-        Map<Integer, Integer> dict = new HashMap<>();
+        HashTable<Integer, Integer> c2 = new HashTable<>();
+        Map<Integer, Integer> dict = new java.util.HashMap();
 
         for (int i = 0; i < testNum; i++) {
             int randVal = ThreadLocalRandom.current().nextInt();
@@ -41,7 +41,7 @@ public class CacheTest {
 
     @Test
     public void cacheTestNull() {
-        Cache<Integer, String> c3 = new Cache<>();
+        HashTable<Integer, String> c3 = new HashTable<>();
         assertNull(c3.get(ThreadLocalRandom.current().nextInt()));
     }
 
@@ -50,12 +50,12 @@ public class CacheTest {
         int testNum = 200000; // number of test writes
         int numThreads = 20; Thread[] tPool = new Thread[numThreads]; // what the fuck is that
 
-        Cache<Integer, Integer> c4 = new Cache<>();
-        Map<Integer, Integer> dict = new HashMap<>();
+        HashTable<Integer, Integer> c4 = new HashTable<>();
+        Map<Integer, Integer> dict = new java.util.HashMap();
         List<Map<Integer, Integer>> parts = new ArrayList<>();
 
         for (int i = 0; i < numThreads; i++) {
-            parts.add(new HashMap<>());
+            parts.add(new java.util.HashMap());
         }
 
         int val;
@@ -78,7 +78,7 @@ public class CacheTest {
 
         List<Map<Integer, Integer>> containers = new ArrayList<>();
         for (int i = 0; i < numThreads / 2; i++) {
-            containers.add(new HashMap<>());
+            containers.add(new java.util.HashMap());
             tPool[i] = new Thread(new cacheGetter(containers.get(i), c4, parts.get(i).keySet()));
         }
 
@@ -107,9 +107,9 @@ public class CacheTest {
     class cachePutter implements Runnable {
 
         Map<Integer, Integer> content;
-        Cache<Integer, Integer> cache;
+        HashTable<Integer, Integer> cache;
 
-        public cachePutter(Map<Integer, Integer> content, Cache cache) {
+        public cachePutter(Map<Integer, Integer> content, HashTable cache) {
             this.content = content;
             this.cache = cache;
         }
@@ -128,10 +128,10 @@ public class CacheTest {
 
     class cacheGetter implements Runnable {
             Map<Integer, Integer> container;
-            Cache<Integer, Integer> cache;
+            HashTable<Integer, Integer> cache;
             Collection<Integer> queries;
 
-            public cacheGetter(Map<Integer, Integer> container, Cache<Integer, Integer> cache, Collection<Integer> queries) {
+            public cacheGetter(Map<Integer, Integer> container, HashTable<Integer, Integer> cache, Collection<Integer> queries) {
                 this.container = container;
                 this.cache = cache;
                 this.queries = queries;
