@@ -1,5 +1,7 @@
-import org.junit.Test;
+package test.java;
 
+import main.java.Cache;
+import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -45,8 +47,8 @@ public class CacheTest {
 
     @Test
     public void cacheTestMultiThread() throws InterruptedException {
-        int testNum = 200000;
-        int numThreads = 20; Thread[] tPool = new Thread[numThreads];
+        int testNum = 200000; // number of test writes
+        int numThreads = 20; Thread[] tPool = new Thread[numThreads]; // what the fuck is that
 
         Cache<Integer, Integer> c4 = new Cache<>();
         Map<Integer, Integer> dict = new HashMap<>();
