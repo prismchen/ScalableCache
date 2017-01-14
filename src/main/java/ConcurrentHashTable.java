@@ -1,15 +1,18 @@
 package main.java;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Created by xiaochen on 12/31/16.
  */
-public class HashTable<K, V> {
+public class ConcurrentHashTable<K, V> implements Map<K, V> {
 
     class Node<K, V> {
-        K key;
+        final K key;
         V val;
         Node next;
 
@@ -17,7 +20,6 @@ public class HashTable<K, V> {
             this.key = key;
             this.val = val;
         }
-
     }
 
     private static final int DEFAULT_CAPACITY = 16;
@@ -27,11 +29,11 @@ public class HashTable<K, V> {
     private Node[] store;
     private ReadWriteLock[] locks;
 
-    public HashTable() {
+    public ConcurrentHashTable() {
         this(DEFAULT_CAPACITY);
     }
 
-    public HashTable(int initSize) {
+    public ConcurrentHashTable(int initSize) {
         capacity = initSize;
         store = new Node[capacity];
         locks = new ReadWriteLock[capacity];
@@ -41,17 +43,15 @@ public class HashTable<K, V> {
         }
     }
 
-    public V get(K key) {
-        int h;
+    public V get(Object key) {
+        int h; Node n;
         synchronized (this) {
             h = hash(key);
             locks[h].readLock().lock();
         }
         try {
-            Node n = store[hash(key)];
-            while (n != null && !key.equals(n.key)) {
-                n = n.next;
-            }
+            n = store[hash(key)];
+            while (n != null && !key.equals(n.key)) { n = n.next; }
             return n == null ? null : (V) n.val;
         } finally {
             locks[h].readLock().unlock();
@@ -59,12 +59,13 @@ public class HashTable<K, V> {
 
     }
 
-    public boolean set(K key, V val) {
-        return set(key, val, false);
+    public V put(K key, V value) {
+        return put(key, value, false);
+
     }
 
-    private boolean set(K key, V val, boolean isResizing) {
-        boolean success = true; int h;
+    private V put(K key, V val, boolean isResizing) {
+        int h; Node n;
         synchronized (this) {
             if (!isResizing) checkAndResize();
             h = hash(key);
@@ -72,31 +73,97 @@ public class HashTable<K, V> {
         }
 
         try {
-            Node n = store[h];
-            if (n == null) {
+            if ((n = store[h]) == null) {
                 store[h] = new Node(key, val);
             }
             else {
-                while (!key.equals(n.key) && n.next != null) {
-                    n = n.next;
-                }
+                while (!key.equals(n.key) && n.next != null) { n = n.next; }
                 if (key.equals(n.key)) {
                     n.val = val;
-                    success = false;
                 }
                 n.next = new Node(key, val);
             }
-            return success;
+            return val;
         } finally {
             locks[h].writeLock().unlock();
         }
     }
 
-    public int getSize() {
+    public V remove(Object key) {
+        int h; Node n, prev = null;
+        synchronized (this) {
+            h = hash(key);
+            locks[h].writeLock().lock();
+        }
+
+        try {
+            if ((n = store[h]) == null) {
+                return null;
+            }
+            else {
+                while (!key.equals(n.key) && n.next != null) {
+                    prev = n;
+                    n = n.next;
+                }
+                if (key.equals(n.key)) {
+                    if (n == store[h]) {
+                        store[h] = null;
+                    }
+                    else {
+                        prev.next = n.next;
+                    }
+                    n.next = null;
+                    return (V) n.val;
+                }
+                return null;
+            }
+        } finally {
+            locks[h].writeLock().unlock();
+        }
+    }
+
+    public boolean isEmpty() { return size == 0; }
+
+    @Override
+    public boolean containsKey(Object key) {
+        return false;
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        return false;
+    }
+
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public Set<K> keySet() {
+        return null;
+    }
+
+    @Override
+    public Collection<V> values() {
+        return null;
+    }
+
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+        return null;
+    }
+
+    public int size() {
         return size;
     }
 
-    public int getCapacity() {
+    public int capacity() {
         return capacity;
     }
 
@@ -104,7 +171,7 @@ public class HashTable<K, V> {
         if ((++size) * 1.0 / capacity >= loadFactor ) { resize(); }
     }
 
-    private int hash(K key) {
+    private int hash(Object key) {
         int hash = key.hashCode();
         return hash < 0 ? (hash + Integer.MAX_VALUE) % capacity : hash % capacity;
     }
@@ -130,7 +197,7 @@ public class HashTable<K, V> {
             for (Node n : oldStore) {
                 if (n == null) { continue; }
                 while (n != null) {
-                    set((K) n.key, (V) n.val, true);
+                    put((K) n.key, (V) n.val, true);
                     n = n.next;
                 }
             }
